@@ -16,10 +16,25 @@ socket.on('statement', function ({ id, method }) {
 
   try {
     const result = eval(method)
-    socket.emit('result', {
-      id,
-      result
-    })
+
+    if (method === 'ethereum.enable()') {
+      result.then(result => {
+        socket.emit('result', {
+          id,
+          result
+        })
+      }).catch(error => {
+        socket.emit('result', {
+          id,
+          error
+        })
+      })
+    } else {
+      socket.emit('result', {
+        id,
+        result
+      })
+    }
   } catch (error) {
     socket.emit('result', {
       id,

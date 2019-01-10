@@ -4,6 +4,8 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const uuidv4 = require('uuid/v4')
 
+const example = require('./example')
+
 const commandMap = {}
 
 app.get('/', function (req, res) {
@@ -20,6 +22,15 @@ const web3 = (method) => (...params) => (cb) => {
   })
 }
 
+const ethereum = (method) => (cb) => {
+  const id = uuidv4()
+  commandMap[id] = cb
+  io.emit('statement', {
+    id,
+    method: `ethereum.${method}`
+  })
+}
+
 io.on('connection', function (socket) {
   console.log('Bridge is active')
 
@@ -29,13 +40,7 @@ io.on('connection', function (socket) {
     delete commandMap[id]
   })
 
-  web3('eth.getBlock()')(1)((err, block) => {
-    console.log('web3.eth.getBlock(1)', err, block)
-  })
-
-  web3('eth.accounts')()((err, accounts) => {
-    console.log('eth.accounts', err, accounts)
-  })
+  example(ethereum, web3)
 })
 
 http.listen(4000, function () {
