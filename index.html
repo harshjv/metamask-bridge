@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <title>MetaMask Bridge</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.dev.js"></script>
+  </head>
+  <body>
+    <h1>Welcome to the MetaMask Bridge</h1>
+    <code>Check your console.</code>
+    <script>
+/* global io */
+/* eslint-disable no-eval */
+const socket = io()
+socket.on('statement', function ({ id, method }) {
+  console.log('Executing', method)
+
+  try {
+    const result = eval(method)
+    socket.emit('result', {
+      id,
+      result
+    })
+  } catch (error) {
+    socket.emit('result', {
+      id,
+      error
+    })
+  }
+})
+
+socket.on('function', function ({ id, method, params }) {
+  method = method.substring(0, method.length - 2)
+  const safeParams = params.map(p => JSON.stringify(p))
+
+  safeParams.push(`function (err, result) {
+    socket.emit('result', {
+      id,
+      error: err,
+      result: result
+    })
+  }`)
+
+  const exec = `${method}(${safeParams.join(', ')})`
+
+  console.log('Executing', exec)
+
+  try {
+    eval(exec)
+  } catch (error) {
+    socket.emit('result', {
+      id,
+      error
+    })
+  }
+})
+    </script>
+  </body>
+</html>
